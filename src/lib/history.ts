@@ -5,12 +5,13 @@ export interface PaletteHistory {
     timestamp: number;
     name?: string;
     type: 'manual' | 'ai';
+    size?: number;
   }
   
   const HISTORY_KEY = 'chromora-history';
   const MAX_HISTORY_ITEMS = 50;
   
-  export function saveToHistory(palette: Omit<PaletteHistory, 'id' | 'timestamp'>) {
+export function saveToHistory(palette: Omit<PaletteHistory, 'id' | 'timestamp'>) {
     try {
       const history = getHistory();
       

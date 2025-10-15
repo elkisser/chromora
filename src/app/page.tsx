@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, History, Download, Sparkles, Copy } from 'lucide-react';
+import { Palette, History, Download, Sparkles, Copy, Save, Menu } from 'lucide-react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { AIPaletteGenerator } from '@/components/AIPaletteGenerator';
 import { PaletteGrid } from '@/components/PaletteGrid';
-import { generatePalette, getColorInfo, ColorInfo } from '@/lib/colors';
+import { generatePalette, getColorInfo, ColorInfo, resizePalette } from '@/lib/colors';
 import { saveToHistory } from '@/lib/history';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -20,28 +20,24 @@ export default function Home() {
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'manual' | 'ai'>('manual');
   const [isLoading, setIsLoading] = useState(false);
+  const [paletteSize, setPaletteSize] = useState<number>(5);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [saveName, setSaveName] = useState('');
 
   useEffect(() => {
-    generateNewPalette(baseColor, paletteType);
-  }, [baseColor, paletteType]);
+    generateNewPalette(baseColor, paletteType, paletteSize);
+  }, [baseColor, paletteType, paletteSize]);
 
-  const generateNewPalette = (color: string, type: PaletteType) => {
+  const generateNewPalette = (color: string, type: PaletteType, size: number = paletteSize) => {
     setIsLoading(true);
     
     // Simular carga para mejor UX
     setTimeout(() => {
       try {
-        const palette = generatePalette(color);
+        const palette = generatePalette(color, size);
         const colors = palette[type].map(getColorInfo);
         setCurrentPalette(colors);
-        
-        // Guardar en historial
-        saveToHistory({
-          baseColor: color,
-          colors: colors.map(c => c.hex),
-          name: `${getPaletteTypeLabel(type)} - ${color}`,
-          type: 'manual'
-        });
       } catch (error) {
         console.error('Error generating palette:', error);
       } finally {
@@ -60,21 +56,33 @@ export default function Home() {
     
     setTimeout(() => {
       try {
-        setCurrentPalette(colorInfos);
-        
-        // Guardar en historial
-        saveToHistory({
-          baseColor: colorInfos[0]?.hex || '#a855f7',
-          colors: colorInfos.map(c => c.hex),
-          name: 'Generado por IA',
-          type: 'ai'
-        });
+        const resized = resizePalette(colorInfos.map(c => c.hex), paletteSize).map(getColorInfo);
+        setCurrentPalette(resized);
       } catch (error) {
         console.error('Error setting AI palette:', error);
       } finally {
         setIsLoading(false);
       }
     }, 500);
+  };
+
+  const handleOpenSaveModal = () => {
+    if (currentPalette.length === 0) return;
+    setSaveName('');
+    setIsSaveModalOpen(true);
+  };
+
+  const handleConfirmSave = () => {
+    if (currentPalette.length === 0) return;
+    const name = saveName.trim() || (activeTab === 'ai' ? 'Generado por IA' : `Paleta ${getPaletteTypeLabel(paletteType)}`);
+    saveToHistory({
+      baseColor: (activeTab === 'ai' ? currentPalette[0]?.hex : baseColor) || baseColor,
+      colors: currentPalette.map(c => c.hex),
+      name,
+      type: activeTab === 'ai' ? 'ai' : 'manual',
+      size: currentPalette.length
+    });
+    setIsSaveModalOpen(false);
   };
 
   const handleColorCopy = (color: string) => {
@@ -139,8 +147,8 @@ export default function Home() {
       {/* Fondo animado */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary-900/10 via-purple-900/10 to-pink-900/10 animate-gradient-x" />
       
-      {/* Partículas de fondo */}
-      <div className="absolute inset-0 opacity-30">
+      {/* Partículas de fondo (oculto en mobile para vista más compacta) */}
+      <div className="absolute inset-0 opacity-30 hidden md:block">
         {[...Array(20)].map((_, i) => {
           // Usar valores completamente determinísticos y enteros para evitar hidratación mismatch
           const positions = [
@@ -205,43 +213,109 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
             >
+              {/* Desktop actions */}
+              <div className="hidden sm:flex items-center gap-3">
+                {currentPalette.length > 0 && (
+                  <>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={copyPaletteAsJSON}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-titanium hover:bg-dark-slate text-white transition-all duration-300 border border-white/10"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copiar JSON
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={exportPalette}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white transition-all duration-300 border border-primary-400/30 shadow-lg"
+                    >
+                      <Download className="w-4 h-4" />
+                      Exportar
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleOpenSaveModal}
+                      disabled={currentPalette.length === 0}
+                      className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 text-white transition-all duration-300 border border-white/10 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.7)] hover:shadow-[0_15px_40px_-10px_rgba(236,72,153,0.6)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="absolute inset-0 rounded-xl bg-white/10 opacity-0 group-hover:opacity-10 transition-opacity" />
+                      <Save className="w-4 h-4 drop-shadow" />
+                      <span className="font-semibold">Guardar</span>
+                    </motion.button>
+                  </>
+                )}
+                <Link
+                  href="/history"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-titanium hover:bg-dark-slate text-white transition-all duration-300 border border-white/10"
+                >
+                  <History className="w-4 h-4" />
+                  Historial
+                </Link>
+              </div>
+
+              {/* Mobile menu button */}
+              <button
+                className="sm:hidden inline-flex items-center justify-center p-2 rounded-lg bg-dark-titanium border border-white/10"
+                onClick={() => setIsMobileMenuOpen((v) => !v)}
+                aria-label="Abrir menú"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            </motion.div>
+          </div>
+          {/* Mobile dropdown */}
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="sm:hidden mt-3 grid gap-2"
+            >
               {currentPalette.length > 0 && (
                 <>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={copyPaletteAsJSON}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-titanium hover:bg-dark-slate text-white transition-all duration-300 border border-white/10"
+                    className="w-full flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-titanium hover:bg-dark-slate text-white transition-all duration-300 border border-white/10"
                   >
                     <Copy className="w-4 h-4" />
                     Copiar JSON
-                  </motion.button>
-                  
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  </button>
+                  <button
                     onClick={exportPalette}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white transition-all duration-300 border border-primary-400/30 shadow-lg"
+                    className="w-full flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white transition-all duration-300 border border-primary-400/30"
                   >
                     <Download className="w-4 h-4" />
                     Exportar
-                  </motion.button>
+                  </button>
+                  <button
+                    onClick={handleOpenSaveModal}
+                    disabled={currentPalette.length === 0}
+                    className="w-full group relative flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 text-white transition-all duration-300 hover:shadow-[0_15px_40px_-10px_rgba(236,72,153,0.6)] disabled:opacity-50"
+                  >
+                    <span className="absolute inset-0 rounded-xl bg-white/10 opacity-0 group-hover:opacity-10 transition-opacity" />
+                    <Save className="w-4 h-4 drop-shadow" />
+                    <span className="font-semibold">Guardar</span>
+                  </button>
                 </>
               )}
-              
               <Link
                 href="/history"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-titanium hover:bg-dark-slate text-white transition-all duration-300 border border-white/10"
+                className="w-full flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-titanium hover:bg-dark-slate text-white transition-all duration-300 border border-white/10"
+                onClick={() => setIsMobileMenuOpen(false)}
               >
                 <History className="w-4 h-4" />
                 Historial
               </Link>
             </motion.div>
-          </div>
+          )}
         </div>
       </header>
 
-      <main className="relative container mx-auto px-4 py-8 z-10">
+      <main className="relative container mx-auto px-4 py-6 md:py-8 z-10">
         {/* Tabs principales */}
         <div className="flex gap-3 mb-8">
           <motion.button
@@ -277,7 +351,7 @@ export default function Home() {
           </motion.button>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Panel de Control */}
           <div className="lg:col-span-1 space-y-8">
             <AnimatePresence mode="wait">
@@ -288,7 +362,7 @@ export default function Home() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-dark-charcoal/80 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl"
+                  className="bg-dark-charcoal/80 backdrop-blur-xl rounded-3xl p-4 sm:p-6 border border-white/10 shadow-2xl"
                 >
                   <ColorPicker 
                     onColorSelect={handleColorSelect}
@@ -302,50 +376,35 @@ export default function Home() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-dark-charcoal/80 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl"
+                  className="bg-dark-charcoal/80 backdrop-blur-xl rounded-3xl p-4 sm:p-6 border border-white/10 shadow-2xl"
                 >
                   <AIPaletteGenerator onPaletteGenerate={handleAIPaletteGenerate} />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Selector de Tipo de Paleta (solo en manual) */}
-            {activeTab === 'manual' && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-dark-charcoal/80 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl"
-              >
-                <h3 className="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
-                  <Palette className="w-5 h-5 text-primary-400" />
-                  Tipo de Paleta
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  {paletteTypes.map((type) => (
-                    <motion.button
-                      key={type.key}
-                      whileHover={{ scale: 1.02, y: -1 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setPaletteType(type.key)}
-                      className={cn(
-                        "p-4 rounded-xl text-left transition-all duration-300 border-2 backdrop-blur-sm",
-                        "group hover:border-primary-500/30",
-                        paletteType === type.key
-                          ? 'bg-primary-600/20 border-primary-500/50 text-white shadow-lg'
-                          : 'bg-dark-titanium/30 border-white/5 text-white/70 hover:bg-dark-titanium/50 hover:text-white'
-                      )}
-                    >
-                      <div className="font-medium text-sm mb-1">{type.label}</div>
-                      <div className="text-xs opacity-60 group-hover:opacity-80 transition-opacity">
-                        {type.description}
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+            {/* Cantidad de colores (mueve al lugar del tipo de paleta) */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="bg-dark-charcoal/80 backdrop-blur-xl rounded-3xl p-4 sm:p-6 border border-white/10 shadow-2xl"
+            >
+              <h3 className="text-lg font-semibold text-white/90 mb-4">Cantidad de colores</h3>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={3}
+                  max={12}
+                  step={1}
+                  value={paletteSize}
+                  onChange={(e) => setPaletteSize(parseInt(e.target.value))}
+                  className="flex-1 accent-purple-500"
+                />
+                <div className="w-12 text-center font-mono text-white/80">{paletteSize}</div>
+              </div>
+              <p className="mt-2 text-xs text-white/50">Ajusta cuántos colores tendrá tu paleta (3 a 12).</p>
+            </motion.div>
           </div>
 
           {/* Visualización de Paleta */}
@@ -377,27 +436,58 @@ export default function Home() {
                       onColorCopy={handleColorCopy}
                     />
 
-                    {/* Información adicional */}
+                    {/* Selector de Tipo de Paleta en cards debajo de la paleta generada */}
+                    {activeTab === 'manual' && (
+                      <div className="mt-4">
+                        <h3 className="text-sm font-semibold text-white/80 mb-3">
+                          Tipo de Paleta
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {paletteTypes.map((type) => (
+                            <motion.button
+                              key={type.key}
+                              whileHover={{ scale: 1.02, y: -1 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => setPaletteType(type.key)}
+                              className={cn(
+                                "p-4 rounded-xl text-left transition-all duration-300 border-2 backdrop-blur-sm",
+                                "group hover:border-primary-500/30",
+                                paletteType === type.key
+                                  ? 'bg-primary-600/20 border-primary-500/50 text-white shadow-lg'
+                                  : 'bg-dark-titanium/30 border-white/5 text-white/70 hover:bg-dark-titanium/50 hover:text-white'
+                              )}
+                            >
+                              <div className="font-medium text-sm mb-1">{type.label}</div>
+                              <div className="text-xs opacity-60 group-hover:opacity-80 transition-opacity">
+                                {type.description}
+                              </div>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Información adicional (más compacta y oculta en mobile) */}
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 }}
-                      className="bg-dark-charcoal/50 rounded-2xl p-6 border border-white/10 backdrop-blur-sm"
+                      className="hidden md:block bg-dark-charcoal/50 rounded-2xl p-4 border border-white/10 backdrop-blur-sm"
                     >
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-4 gap-4 text-xs">
                         <div>
                           <div className="text-white/60">Colores</div>
                           <div className="text-white font-semibold">{currentPalette.length}</div>
                         </div>
                         <div>
                           <div className="text-white/60">Modo</div>
-                          <div className="text-white font-semibold">
+                          <div className="text-white font-semibold truncate">
                             {activeTab === 'ai' ? 'IA Generativa' : getPaletteTypeLabel(paletteType)}
                           </div>
                         </div>
                         <div>
-                          <div className="text-white/60">Color Base</div>
-                          <div className="text-white font-semibold font-mono">{baseColor}</div>
+                          <div className="text-white/60">Base</div>
+                          <div className="text-white font-semibold font-mono truncate">{baseColor}</div>
                         </div>
                         <div>
                           <div className="text-white/60">Estado</div>
@@ -444,6 +534,50 @@ export default function Home() {
                 <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
                 <span className="font-medium">{copiedColor}</span>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Modal Guardar */}
+        <AnimatePresence>
+          {isSaveModalOpen && (
+            <motion.div
+              className="fixed inset-0 z-50 grid place-items-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSaveModalOpen(false)} />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="relative z-10 w-full max-w-md px-4 sm:px-6 py-6 rounded-2xl bg-dark-charcoal border border-white/10 shadow-2xl"
+              >
+                <h3 className="text-lg font-semibold text-white mb-2">Guardar paleta</h3>
+                <p className="text-white/60 text-sm mb-4">Asigna un nombre para guardar esta paleta en tu historial.</p>
+                <input
+                  type="text"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder="Nombre de la paleta"
+                  className="w-full px-4 py-3 rounded-xl bg-dark-titanium/60 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50"
+                />
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    onClick={() => setIsSaveModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-dark-titanium hover:bg-dark-slate text-white border border-white/10 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleConfirmSave}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 text-white border border-white/10 shadow-[0_10px_30px_-10px_rgba(168,85,247,0.7)] hover:shadow-[0_15px_40px_-10px_rgba(236,72,153,0.6)] transition-all"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

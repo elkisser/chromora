@@ -34,9 +34,15 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="icon" href="/logo_chromora.png" />
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans bg-dark-carbon text-white antialiased`}>
-        {children}
+        <div className="min-h-screen">
+          {/* Transición de entrada global */}
+          <div className="animate-fade-in">
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );

@@ -82,7 +82,7 @@ export function ColorPicker({ onColorSelect, currentColor = '#a855f7' }: ColorPi
           Ingresa un color (nombre, HEX, RGB, HSL)
         </label>
         
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={inputValue}
@@ -90,7 +90,7 @@ export function ColorPicker({ onColorSelect, currentColor = '#a855f7' }: ColorPi
             onKeyPress={handleKeyPress}
             placeholder="Ej: azul marino, #1e90ff, rgb(30,144,255), hsl(210, 100%, 56%)"
             className={cn(
-              "flex-1 px-4 py-3 rounded-xl border-2 bg-dark-charcoal/80 backdrop-blur-sm",
+              "w-full sm:flex-1 px-4 py-3 rounded-xl border-2 bg-dark-charcoal/80 backdrop-blur-sm",
               "text-white placeholder:text-white/40 focus:outline-none transition-all duration-300",
               "font-mono text-sm",
               isValid 
@@ -105,7 +105,7 @@ export function ColorPicker({ onColorSelect, currentColor = '#a855f7' }: ColorPi
             onClick={handleInputSubmit}
             disabled={!isValid || inputValue.trim() === ''}
             className={cn(
-              "px-6 py-3 rounded-xl font-medium transition-all duration-300",
+              "w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all duration-300",
               "bg-primary-600 hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed",
               "text-white shadow-lg hover:shadow-xl border border-primary-400/30",
               "flex items-center gap-2"
@@ -134,7 +134,7 @@ export function ColorPicker({ onColorSelect, currentColor = '#a855f7' }: ColorPi
           O selecciona un color
         </label>
         
-        <div className="flex items-center gap-4 p-4 bg-dark-charcoal/50 rounded-2xl border border-white/10">
+        <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-dark-charcoal/50 rounded-2xl border border-white/10">
           <input
             type="color"
             value={currentColor}
@@ -142,7 +142,7 @@ export function ColorPicker({ onColorSelect, currentColor = '#a855f7' }: ColorPi
             className="w-20 h-20 rounded-2xl cursor-pointer border-2 border-white/20 shadow-2xl"
           />
           
-          <div className="flex-1 space-y-2">
+          <div className="w-full sm:flex-1 space-y-2">
             <p className="text-white font-mono text-lg font-bold">{currentColor}</p>
             <div className="space-y-1 text-sm text-white/60">
               <p className="font-mono">{colorInfo.rgb}</p>

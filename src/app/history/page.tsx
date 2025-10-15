@@ -241,7 +241,7 @@ export default function HistoryPage() {
                         <span>•</span>
                         <span className="font-mono">{item.baseColor}</span>
                         <span>•</span>
-                        <span>{item.colors.length} colores</span>
+                        <span>{item.size ?? item.colors.length} colores</span>
                       </div>
                     </div>
                     

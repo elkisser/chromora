@@ -81,17 +81,27 @@ export function getColorInfo(color: string): ColorInfo {
   };
 }
 
-export function generatePalette(baseColor: string) {
+export function generatePalette(baseColor: string, count: number = 5) {
   const color = chroma(baseColor);
   
-  return {
+  const basePalettes = {
     monochromatic: generateMonochromatic(color),
     analogous: generateAnalogous(color),
     complementary: generateComplementary(color),
     triadic: generateTriadic(color),
     splitComplementary: generateSplitComplementary(color),
     tetradic: generateTetradic(color),
-  };
+  } as const;
+
+  if (count === 5) return basePalettes as unknown as Record<string, string[]>;
+
+  // Redimensionar con escala LCH para mantener armonía
+  return (Object.fromEntries(
+    Object.entries(basePalettes).map(([key, values]) => {
+      const scaled = chroma.scale(values).mode('lch').colors(count);
+      return [key, scaled];
+    })
+  ) as unknown) as Record<string, string[]>;
 }
 
 function generateMonochromatic(baseColor: chroma.Color) {
@@ -165,4 +175,12 @@ export function getContrastColor(color: string): string {
 
 export function isValidColor(color: string): boolean {
   return parseColor(color) !== null;
+}
+
+// Redimensionar cualquier paleta existente a una cantidad específica
+export function resizePalette(colors: string[], count: number): string[] {
+  if (!colors || colors.length === 0) return [];
+  if (count <= 0) return [];
+  if (colors.length === count) return colors;
+  return chroma.scale(colors).mode('lch').colors(count);
 }

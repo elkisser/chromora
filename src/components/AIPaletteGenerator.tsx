@@ -14,6 +14,14 @@ export function AIPaletteGenerator({ onPaletteGenerate }: AIPaletteGeneratorProp
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [examples, setExamples] = useState<string[]>([
+    "paleta otoñal pastel",
+    "colores para una app gamer futurista",
+    "tonos fríos elegantes para dashboard",
+    "paleta vibrante veraniega",
+    "colores minimalistas profesionales",
+    "esquema de colores para landing page tech",
+  ]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -40,6 +48,15 @@ export function AIPaletteGenerator({ onPaletteGenerate }: AIPaletteGeneratorProp
       if (data.colors && Array.isArray(data.colors)) {
         const colorInfos = data.colors.map((color: string) => getColorInfo(color));
         onPaletteGenerate(colorInfos);
+        // Rotar ejemplos: mantener 6; si el prompt no existe, agregar reemplazando el más viejo
+        setExamples((prev) => {
+          const trimmed = prompt.trim();
+          if (!trimmed) return prev;
+          if (prev.includes(trimmed)) return prev;
+          const next = [...prev, trimmed];
+          if (next.length > 6) next.shift();
+          return next;
+        });
         setPrompt('');
       } else {
         throw new Error('Formato de respuesta inválido de la IA');
@@ -51,18 +68,7 @@ export function AIPaletteGenerator({ onPaletteGenerate }: AIPaletteGeneratorProp
     }
   };
 
-  const examplePrompts = [
-    "paleta otoñal pastel",
-    "colores para una app gamer futurista",
-    "tonos fríos elegantes para dashboard",
-    "paleta vibrante veraniega",
-    "colores minimalistas profesionales",
-    "esquema de colores para landing page tech",
-    "paleta naturaleza orgánica",
-    "colores retro años 80",
-    "esquema monocromático azul",
-    "paleta lujo dorado y negro"
-  ];
+  // Ejemplos dinámicos limitados a 6, rotan con cada generación
 
   return (
     <div className="space-y-6">
@@ -75,7 +81,7 @@ export function AIPaletteGenerator({ onPaletteGenerate }: AIPaletteGeneratorProp
           </span>
         </label>
         
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={prompt}
@@ -84,7 +90,7 @@ export function AIPaletteGenerator({ onPaletteGenerate }: AIPaletteGeneratorProp
             placeholder="Describe la paleta que quieres crear..."
             disabled={isLoading}
             className={cn(
-              "flex-1 px-4 py-3 rounded-xl border-2 bg-dark-charcoal/80 backdrop-blur-sm",
+              "w-full sm:flex-1 px-4 py-3 rounded-xl border-2 bg-dark-charcoal/80 backdrop-blur-sm",
               "text-white placeholder:text-white/40 focus:outline-none transition-all duration-300",
               "border-purple-500/30 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20",
               "disabled:opacity-50 disabled:cursor-not-allowed"
@@ -97,7 +103,7 @@ export function AIPaletteGenerator({ onPaletteGenerate }: AIPaletteGeneratorProp
             onClick={handleGenerate}
             disabled={isLoading || !prompt.trim()}
             className={cn(
-              "px-6 py-3 rounded-xl font-medium transition-all duration-300",
+              "w-full sm:w-auto px-8 py-4 rounded-xl font-semibold transition-all duration-300 text-base",
               "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500",
               "text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed",
               "flex items-center gap-2 border border-purple-400/30"
@@ -105,12 +111,12 @@ export function AIPaletteGenerator({ onPaletteGenerate }: AIPaletteGeneratorProp
           >
             {isLoading ? (
               <>
-                <Loader className="w-4 h-4 animate-spin" />
+                <Loader className="w-5 h-5 animate-spin" />
                 Generando...
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-5 h-5" />
                 Crear
               </>
             )}
@@ -132,7 +138,7 @@ export function AIPaletteGenerator({ onPaletteGenerate }: AIPaletteGeneratorProp
       <div className="space-y-3">
         <p className="text-sm text-white/60">Ejemplos de prompts que puedes usar:</p>
         <div className="flex flex-wrap gap-2">
-          {examplePrompts.map((example, index) => (
+          {examples.map((example, index) => (
             <motion.button
               key={example}
               whileHover={{ scale: 1.05 }}
