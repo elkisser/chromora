@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   description: 'Genera hermosas paletas de colores con IA y herramientas profesionales. Chromora te ayuda a crear esquemas de color perfectos para tus proyectos.',
   keywords: 'colores, paletas, diseño, UI, UX, generador, IA, chroma, next.js, tailwind',
   authors: [{ name: 'Chromora Team' }],
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+    shortcut: '/icon.png',
+  },
 };
 
 export const viewport = {
@@ -34,7 +39,8 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="icon" href="/logo_chromora.png" />
+        <link rel="icon" href="/icon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icon.png" />
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans bg-dark-carbon text-white antialiased`}>
         <div className="min-h-screen">
