@@ -194,11 +194,15 @@ export default function Home() {
               className="flex items-center gap-3"
             >
               <motion.div 
-                className="w-12 h-12 rounded-2xl bg-gradient-to-r from-primary-500 to-purple-600 flex items-center justify-center shadow-2xl"
+                className="w-12 h-12 rounded-2xl bg-gradient-to-r from-primary-500 to-purple-600 flex items-center justify-center shadow-2xl overflow-hidden"
                 whileHover={{ scale: 1.05, rotate: 5 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <Palette className="w-6 h-6 text-white" />
+                <img
+                  src="/icon.png"
+                  alt="Chromora"
+                  className="w-8 h-8 object-contain mix-blend-screen"
+                />
               </motion.div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
