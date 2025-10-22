@@ -18,9 +18,13 @@ export const metadata: Metadata = {
   keywords: 'colores, paletas, diseño, UI, UX, generador, IA, chroma, next.js, tailwind',
   authors: [{ name: 'Chromora Team' }],
   icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
-    shortcut: '/icon.png',
+    icon: [
+      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icon.png', rel: 'shortcut icon', type: 'image/png' },
+    ],
+    apple: [{ url: '/icon.png' }],
+    shortcut: ['/icon.png'],
   },
 };
 
@@ -39,8 +43,11 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="icon" href="/icon.png" type="image/png" />
+        <link rel="icon" href="/icon.png" sizes="32x32" type="image/png" />
+        <link rel="icon" href="/icon.png" sizes="16x16" type="image/png" />
+        <link rel="shortcut icon" href="/icon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icon.png" />
+        <meta name="theme-color" content="#0b0b0b" />
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans bg-dark-carbon text-white antialiased`}>
         <div className="min-h-screen">
