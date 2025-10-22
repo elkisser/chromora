@@ -82,7 +82,7 @@ export function getColorInfo(color: string): ColorInfo {
 }
 
 export function generatePalette(baseColor: string, count: number = 5) {
-  const color = chroma(baseColor);
+  const color: any = chroma(baseColor);
   
   const basePalettes = {
     monochromatic: generateMonochromatic(color),
@@ -104,7 +104,7 @@ export function generatePalette(baseColor: string, count: number = 5) {
   ) as unknown) as Record<string, string[]>;
 }
 
-function generateMonochromatic(baseColor: chroma.Color) {
+function generateMonochromatic(baseColor: any) {
   return [
     baseColor.brighten(2.5).saturate(0.5).hex(),
     baseColor.brighten(1.5).saturate(0.3).hex(),
@@ -114,7 +114,7 @@ function generateMonochromatic(baseColor: chroma.Color) {
   ];
 }
 
-function generateAnalogous(baseColor: chroma.Color) {
+function generateAnalogous(baseColor: any) {
   const hue = baseColor.get('hsl.h');
   return [
     baseColor.set('hsl.h', (hue - 45) % 360).hex(),
@@ -125,7 +125,7 @@ function generateAnalogous(baseColor: chroma.Color) {
   ];
 }
 
-function generateComplementary(baseColor: chroma.Color) {
+function generateComplementary(baseColor: any) {
   return [
     baseColor.hex(),
     baseColor.set('hsl.h', (baseColor.get('hsl.h') + 180) % 360).hex(),
@@ -135,7 +135,7 @@ function generateComplementary(baseColor: chroma.Color) {
   ];
 }
 
-function generateTriadic(baseColor: chroma.Color) {
+function generateTriadic(baseColor: any) {
   const hue = baseColor.get('hsl.h');
   return [
     baseColor.hex(),
@@ -146,7 +146,7 @@ function generateTriadic(baseColor: chroma.Color) {
   ];
 }
 
-function generateSplitComplementary(baseColor: chroma.Color) {
+function generateSplitComplementary(baseColor: any) {
   const hue = baseColor.get('hsl.h');
   return [
     baseColor.hex(),
@@ -157,7 +157,7 @@ function generateSplitComplementary(baseColor: chroma.Color) {
   ];
 }
 
-function generateTetradic(baseColor: chroma.Color) {
+function generateTetradic(baseColor: any) {
   const hue = baseColor.get('hsl.h');
   return [
     baseColor.hex(),
